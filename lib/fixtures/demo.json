@@ -1,0 +1,100 @@
+{
+  "label": "Golden demo run 2026-11-01 \u2014 REAL YouCam measurements on stock test portraits (0u left on key, fixture mandatory). Labeled precomputed.",
+  "skin": {
+    "raw": {
+      "acne": 88.9,
+      "redness": 94.3,
+      "oiliness": 73,
+      "moisture": 34,
+      "texture": 65.3,
+      "radiance": 60.3,
+      "dark_circle_v2": 70
+    },
+    "ui": {
+      "acne": 85,
+      "redness": 91,
+      "oiliness": 78,
+      "moisture": 64,
+      "texture": 74,
+      "radiance": 72,
+      "dark_circle_v2": 72
+    },
+    "all": 76.6,
+    "skin_age": 63,
+    "skinHex": "#b0896c",
+    "undertone": "warm"
+  },
+  "tone": {
+    "skin_color": "#b0896c",
+    "lip_color": "#ba7c73",
+    "eye_color": "#241816",
+    "eyebrow_color": "#3e3834",
+    "eye_color_name": "Brown",
+    "face_quality": {
+      "area": "good",
+      "frontal": "good",
+      "has_face": true,
+      "lighting": "good",
+      "faceangle": "good"
+    }
+  },
+  "advice": {
+    "refuses": [
+      {
+        "item": "Red / orange tops near face",
+        "reason": "redness 94.3 reads stronger next to warm hues"
+      },
+      {
+        "item": "True-red matte lip",
+        "reason": "high-chroma red competes with redness; sheer berry flatters instead"
+      },
+      {
+        "item": "White silk / clingy shine fabrics",
+        "reason": "oil 73: shine + sweat show fastest on pale silk"
+      },
+      {
+        "item": "Heavy matte foundation + clingy wool",
+        "reason": "dryness/texture catches on matte + coarse knits"
+      }
+    ],
+    "prefers": [
+      "Forest / navy top (high contrast, calms redness)",
+      "Sheer berry lip + tinted moisturizer over full-coverage matte",
+      "Matte finish, patterned weave",
+      "Dewy finish, satin drape",
+      "Higher neckline draws gaze away from under-eye shadow"
+    ],
+    "makeup": {
+      "finish": "matte",
+      "coverage": "sheer-to-medium (tinted moisturizer)",
+      "lipNote": "sheer berry over true-red"
+    }
+  },
+  "palette": [
+    {
+      "name": "Forest top #1F4D3A",
+      "hex": "#1f4d3a",
+      "deltaE_vs_skin": 46.8,
+      "note": "high contrast, will not wash you out"
+    },
+    {
+      "name": "Rejected: nude camel #C19A6B",
+      "hex": "#c19a6b",
+      "deltaE_vs_skin": 11.1,
+      "note": "too close to skin #b0896c \u2014 washes you out"
+    }
+  ],
+  "images": {
+    "makeupResult": "/fixtures/makeup_golden.jpg",
+    "clothResult": "/fixtures/cloth_golden.jpg",
+    "masks": "/fixtures/mask_<concern>.png"
+  },
+  "costs_measured_u": {
+    "skin_sd7": 12,
+    "tone": 20,
+    "makeup": 4,
+    "cloth": 2,
+    "total_look": 38,
+    "note": "measured on this key 2026-11-01; feature-cost endpoint does not list these SKUs"
+  }
+}
