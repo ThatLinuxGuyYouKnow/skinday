@@ -5,6 +5,7 @@ import { WhyCard } from "@/components/WhyCard";
 import { LookCompare } from "@/components/LookCompare";
 import { HonestLabel } from "@/components/HonestLabel";
 import { BudgetMeter } from "@/components/BudgetMeter";
+import { GuideTour, type TourStep } from "@/components/GuideTour";
 
 const OCCASIONS = ["Interview", "Date Night", "Diwali Dinner", "Travel"];
 
@@ -20,6 +21,39 @@ const PRODUCTS = [
   { name: "Camel satin blouse", meta: "Garment · visible, but not recommended", hex: "#c19a6b", refused: true, flag: "LOW CONTRAST" },
   { name: "Muted berry lip tint", meta: "Makeup · soft satin finish", hex: "#8e2f45", refused: false },
   { name: "Weightless skin veil", meta: "Makeup · natural finish", hex: "#e8d5c3", refused: false },
+];
+
+const TOUR_STEPS: TourStep[] = [
+  {
+    targetId: "tour-skin",
+    eyebrow: "Step 1 · Your skin today",
+    title: "Start with your strongest signal",
+    body: "The top number is what drives everything below. Bars are ranked — calm at the bottom matters as much as red at the top.",
+  },
+  {
+    targetId: "tour-why",
+    eyebrow: "Step 2 · Why this look",
+    title: "We say no with reasons",
+    body: "Skipped items show exactly which score ruled them out. Every pick carries its ΔE contrast number, not just vibes.",
+  },
+  {
+    targetId: "tour-makeup",
+    eyebrow: "Step 3 · Makeup preview",
+    title: "Drag the slider",
+    body: "Before on the left, your render on the right. This is a cosmetic preview of finish and tone — not coverage promises.",
+  },
+  {
+    targetId: "tour-outfit",
+    eyebrow: "Step 4 · Outfit preview",
+    title: "See it in context",
+    body: "The garment render for your occasion edit. Visual preview only — drape and fit will vary in real life.",
+  },
+  {
+    targetId: "tour-bundle",
+    eyebrow: "Step 5 · Your edit",
+    title: "Add only what feels right",
+    body: "Four pieces, one checkout. Flagged items stay visible so you can see what we refused — and why.",
+  },
 ];
 
 function fileToDataUrl(f: File): Promise<string> {
@@ -38,6 +72,8 @@ export default function Page() {
   const [data, setData] = useState<SkinData | null>(null);
   const [cart, setCart] = useState<string[]>([]);
   const [checkoutMsg, setCheckoutMsg] = useState<string | null>(null);
+  const [tourIndex, setTourIndex] = useState(0);
+  const [showTour, setShowTour] = useState(false);
 
   useEffect(() => {
     try {
@@ -46,6 +82,28 @@ export default function Page() {
       /* fresh cart */
     }
   }, []);
+
+  // Auto-open the guided tour the first time results arrive.
+  useEffect(() => {
+    if (!data?.skin) return;
+    try {
+      if (localStorage.getItem("skinday-tour-seen") === "1") return;
+    } catch {
+      /* private mode — still show once */
+    }
+    setTourIndex(0);
+    setShowTour(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data]);
+
+  function closeTour() {
+    setShowTour(false);
+    try {
+      localStorage.setItem("skinday-tour-seen", "1");
+    } catch {
+      /* private mode */
+    }
+  }
 
   async function run() {
     setLoading(true);
@@ -163,6 +221,24 @@ export default function Page() {
         {loading ? "Reading skin…" : "Get today's look  →"}
       </button>
       <div className="tiny">Your photo stays in this session. No account needed.</div>
+      {img && !data && !loading ? (
+        <div className="nudge" role="status">
+          <span aria-hidden>✓</span>
+          <div>
+            <b>Photo ready — two steps left.</b>
+            Pick your occasion above, then hit “Get today&apos;s look”. Your skin read, reasoning, previews, and bundle will appear below in order.
+          </div>
+        </div>
+      ) : null}
+      {loading ? (
+        <div className="nudge" role="status" aria-live="polite">
+          <span aria-hidden>◍</span>
+          <div>
+            <b>Reading your skin…</b>
+            Scoring 7 signals, then building your occasion edit. Previews appear below — take the 5-step tour when it pops up.
+          </div>
+        </div>
+      ) : null}
 
       {data?.skin && data?.advice ? (
         <>
@@ -171,12 +247,26 @@ export default function Page() {
             <span>
               {data.mode}  ·  {occasion} edit  ·  0 units used
             </span>
+            <button
+              className="tour-replay"
+              style={{ marginLeft: "auto" }}
+              onClick={() => {
+                setTourIndex(0);
+                setShowTour(true);
+              }}
+            >
+              How to read this?
+            </button>
           </div>
 
-          <SkinCard skin={data.skin} />
-          <WhyCard advice={data.advice} palette={data.palette} />
+          <div id="tour-skin">
+            <SkinCard skin={data.skin} />
+          </div>
+          <div id="tour-why">
+            <WhyCard advice={data.advice} palette={data.palette} />
+          </div>
 
-          <section className="card">
+          <section className="card" id="tour-makeup">
             <div className="eyebrow">03 / Makeup preview</div>
             <h2>Soft focus, not full cover.</h2>
             <p className="subtle" style={{ marginTop: 0 }}>
@@ -189,7 +279,7 @@ export default function Page() {
           </section>
 
           {isFixture ? (
-            <section className="card">
+            <section className="card" id="tour-outfit">
               <div className="eyebrow">04 / Outfit preview</div>
               <h2>The forest-green moment.</h2>
               <p className="subtle" style={{ marginTop: 0 }}>
@@ -203,7 +293,7 @@ export default function Page() {
             </section>
           ) : null}
 
-          <section className="card">
+          <section className="card" id="tour-bundle">
             <div className="eyebrow">05 / Your edit, ready to shop</div>
             <h2>Bring the whole look together.</h2>
             <p className="subtle" style={{ marginTop: 0 }}>
@@ -258,6 +348,15 @@ export default function Page() {
 
           <HonestLabel />
         </>
+      ) : null}
+      {showTour && data?.skin ? (
+        <GuideTour
+          steps={TOUR_STEPS}
+          index={tourIndex}
+          onNext={() => setTourIndex((i) => Math.min(i + 1, TOUR_STEPS.length - 1))}
+          onBack={() => setTourIndex((i) => Math.max(i - 1, 0))}
+          onDone={closeTour}
+        />
       ) : null}
     </main>
   );
