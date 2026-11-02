@@ -2,4 +2,15 @@ node_modules/
 .next/
 .env
 .env.local
+.env*.local
 *.log
+
+# hyperframes render outputs
+out/
+renders/
+dist-renders/
+.hyperframes/
+hyperframes-output/
+*.mp4
+*.mov
+*.webm
