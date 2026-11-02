@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { SkinCard } from "@/components/SkinCard";
 import { WhyCard } from "@/components/WhyCard";
 import { LookCompare } from "@/components/LookCompare";
@@ -26,13 +26,14 @@ export default function Page() {
   const [occasion, setOccasion] = useState(OCCASIONS[0]);
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<{ skin?: { raw: Record<string, number>; skinHex?: string; undertone?: string }; advice?: { refuses: { item: string; reason: string }[]; prefers: string[] }; palette?: { name: string; hex: string; deltaE_vs_skin: number; note: string }[]; mode?: string } | null>(null);
-  const [cart, setCart] = useState<string[]>(() => {
+  const [cart, setCart] = useState<string[]>([]);
+  useEffect(() => {
     try {
-      return JSON.parse(localStorage.getItem("skinday-cart") || "[]");
+      setCart(JSON.parse(localStorage.getItem("skinday-cart") || "[]"));
     } catch {
-      return [];
+      /* fresh cart */
     }
-  });
+  }, []);
 
   async function run() {
     setLoading(true);
