@@ -8,8 +8,12 @@ import { BudgetMeter } from "@/components/BudgetMeter";
 
 const OCCASIONS = ["Interview", "Date Night", "Diwali Dinner", "Travel"];
 const GARMENTS = [
-  { name: "Forest top #1F4D3A (ΔE 46.8 — won't wash you out)", url: "https://plugins-media.makeupar.com/strapi/assets/clothes_reference_full_body_01_5a000d999f.png" },
-  { name: "Nude camel #C19A6B (ΔE 11.1 — refused, washes out)", url: "" },
+  { name: "Forest top", detail: "#1F4D3A · ΔE 46.8 — won't wash you out", refused: false },
+  { name: "Nude camel", detail: "#C19A6B · ΔE 11.1 — refused, washes out", refused: true },
+];
+const BUNDLE = [
+  { name: "Sheer berry lip", detail: "transparent glow over true-red matte" },
+  { name: "Tinted moisturizer", detail: "sheer-to-medium, dewy where dry" },
 ];
 
 function fileToDataUrl(f: File): Promise<string> {
@@ -46,22 +50,39 @@ export default function Page() {
     }
   }
 
-  function addToCart(name: string) {
-    const next = [...cart, name];
+  function toggleCart(name: string) {
+    const next = cart.includes(name) ? cart.filter((c) => c !== name) : [...cart, name];
     setCart(next);
-    localStorage.setItem("skinday-cart", JSON.stringify(next));
+    try {
+      localStorage.setItem("skinday-cart", JSON.stringify(next));
+    } catch {
+      /* private mode */
+    }
   }
 
+  function clearCart() {
+    setCart([]);
+    try {
+      localStorage.removeItem("skinday-cart");
+    } catch {
+      /* private mode */
+    }
+  }
+
+  const isFixture = !!data?.mode?.startsWith("fixture");
+
   return (
-    <main style={{ maxWidth: 720, margin: "0 auto", padding: 24, display: "grid", gap: 16 }}>
-      <header style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <h1 style={{ margin: 0 }}>SkinDay</h1>
+    <main className="page">
+      <header className="brand">
+        <div>
+          <h1 className="serif">SkinDay<span className="dot">.</span></h1>
+          <p className="tagline">Dress for the skin you're in today. One selfie → skin-state → makeup + outfit bundle.</p>
+        </div>
         <BudgetMeter />
       </header>
-      <p style={{ margin: 0, opacity: 0.7 }}>Dress for the skin you're in today. One selfie → skin-state → look bundle.</p>
 
-      <section style={{ display: "grid", gap: 8 }}>
-        <label style={{ fontWeight: 600 }}>1. Scan (one photo, this session only)</label>
+      <section className="card">
+        <label className="step-label"><span className="n">1</span>Scan — one photo, this session only</label>
         <input
           type="file"
           accept="image/*"
@@ -70,49 +91,67 @@ export default function Page() {
             if (f) setImg(await fileToDataUrl(f));
           }}
         />
-        {img ? <img src={img} alt="upload" style={{ width: "100%", borderRadius: 12, border: "1px solid #eee" }} /> : null}
+        {img ? <img src={img} alt="upload" className="preview-img" style={{ marginTop: 10 }} /> : null}
       </section>
 
-      <section style={{ display: "grid", gap: 8 }}>
-        <label style={{ fontWeight: 600 }}>2. Occasion</label>
-        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+      <section className="card">
+        <label className="step-label"><span className="n">2</span>Occasion — the look adapts</label>
+        <div className="chip-row" role="group" aria-label="Occasion">
           {OCCASIONS.map((o) => (
-            <button
-              key={o}
-              onClick={() => setOccasion(o)}
-              style={{ padding: "8px 14px", borderRadius: 20, border: occasion === o ? "2px solid #111" : "1px solid #ccc", background: "#fff" }}
-            >
+            <button key={o} onClick={() => setOccasion(o)} className="chip" aria-pressed={occasion === o}>
               {o}
             </button>
           ))}
         </div>
       </section>
 
-      <button onClick={run} disabled={loading} style={{ padding: 14, borderRadius: 12, background: "#111", color: "#fff", fontSize: 16 }}>
-        {loading ? "Reading skin… (cloth VTO takes ~20s live)" : "3. Get today's look"}
+      <button className="cta" onClick={run} disabled={loading}>
+        {loading ? "Reading skin… (cloth VTO takes ~20s live)" : "Get today's look"}
       </button>
 
       {data?.skin && data?.advice ? (
         <>
-          <div style={{ fontSize: 12, opacity: 0.6 }}>Mode: {data.mode} · occasion: {occasion}</div>
+          <div className="mode-line">
+            {isFixture ? <span className="mode-badge">Precomputed demo</span> : null}
+            <span>{data.mode} · {occasion}</span>
+          </div>
           <SkinCard skin={data.skin} />
           <WhyCard advice={data.advice} palette={data.palette} />
-          <LookCompare before={img} after={String(data.mode).startsWith("fixture") ? "/fixtures/makeup_golden.jpg" : null} />
-          {String(data.mode).startsWith("fixture") ? (
-            <figure style={{ margin: 0, display: "grid", gap: 4 }}>
-              <img src="/fixtures/cloth_golden.jpg" alt="Outfit VTO (precomputed golden run)" style={{ width: "100%", borderRadius: 12, border: "1px solid #e5e5e5" }} />
-              <figcaption style={{ fontSize: 12, opacity: 0.6 }}>Outfit VTO — precomputed golden run · visual preview only, not a fit guarantee.</figcaption>
-            </figure>
+          <div>
+            <div className="step-label" style={{ marginBottom: 8 }}>Makeup, on you</div>
+            <LookCompare before={img} after={isFixture ? "/fixtures/makeup_golden.jpg" : null} />
+          </div>
+          {isFixture ? (
+            <div>
+              <div className="step-label" style={{ marginBottom: 8 }}>Outfit, on you</div>
+              <img src="/fixtures/cloth_golden.jpg" alt="Outfit VTO (precomputed golden run)" className="preview-img" />
+              <div className="caption">Outfit VTO — precomputed golden run · visual preview only, not a fit guarantee.</div>
+            </div>
           ) : null}
-          <section style={{ display: "grid", gap: 8 }}>
-            <div style={{ fontWeight: 600 }}>4. Bundle checkout (localStorage cart)</div>
-            {GARMENTS.map((g) => (
-              <div key={g.name} style={{ display: "flex", justifyContent: "space-between", border: "1px solid #eee", borderRadius: 8, padding: 8 }}>
-                <span>{g.name}</span>
-                <button onClick={() => addToCart(g.name)}>Add ({cart.includes(g.name) ? "✓" : "+"})</button>
-              </div>
-            ))}
-            <div style={{ fontSize: 14 }}>Cart: {cart.length ? cart.join(", ") : "empty"}</div>
+          <section className="card">
+            <div className="step-label"><span className="n">3</span>Bundle checkout</div>
+            <div style={{ display: "grid", gap: 8 }}>
+              {[...GARMENTS, ...BUNDLE].map((g) => {
+                const inCart = cart.includes(g.name);
+                const refused = (g as { refused?: boolean }).refused;
+                return (
+                  <div key={g.name} className={refused ? "cart-row refused" : "cart-row"}>
+                    <span>
+                      <span className="nm">{g.name}</span>
+                      <br />
+                      <span style={{ fontSize: 12, color: "var(--muted)" }}>{g.detail}{refused ? " · skipped for today" : ""}</span>
+                    </span>
+                    <button className={inCart ? "add-btn in-cart" : "add-btn"} onClick={() => toggleCart(g.name)}>
+                      {inCart ? "✓ Added" : "Add +"}
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+            <div className="cart-line" style={{ marginTop: 10, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <span>Cart ({cart.length}): {cart.length ? cart.join(" · ") : "empty"}</span>
+              {cart.length ? <button className="link-btn" onClick={clearCart}>Clear</button> : null}
+            </div>
           </section>
           <HonestLabel />
         </>
