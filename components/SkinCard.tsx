@@ -2,55 +2,58 @@ const LABELS: Record<string, string> = {
   acne: "Blemishes",
   redness: "Redness",
   oiliness: "Oil / shine",
-  moisture: "Dryness",
+  moisture: "Dryness signal",
   texture: "Texture",
   radiance: "Dullness",
   dark_circle_v2: "Under-eye shadow",
 };
 
-function level(v: number, k: string) {
-  // moisture is inverted: low score = dry = concern
-  const concern = k === "moisture" ? 100 - v : v;
-  if (concern >= 70) return { fill: "#8e2f45", tag: "high" };
-  if (concern >= 45) return { fill: "#c2703d", tag: "moderate" };
-  return { fill: "#1f4d3a", tag: "calm" };
+// Display value: moisture and radiance are inverted (low score = stronger concern).
+function shown(k: string, v: number) {
+  if (k === "moisture" || k === "radiance") return Math.round(100 - v);
+  return Math.round(v);
+}
+
+function fillClass(v: number) {
+  if (v >= 70) return "fill high";
+  if (v >= 45) return "fill";
+  return "fill low";
 }
 
 export function SkinCard({ skin }: { skin: { raw: Record<string, number>; skinHex?: string; undertone?: string } }) {
-  const entries = Object.entries(skin.raw).sort((a, b) => {
-    const ca = a[0] === "moisture" ? 100 - a[1] : a[1];
-    const cb = b[0] === "moisture" ? 100 - b[1] : b[1];
-    return cb - ca;
-  });
+  const entries = Object.entries(skin.raw)
+    .map(([k, v]) => ({ k, v: shown(k, v) }))
+    .sort((a, b) => b.v - a.v);
   const top = entries[0];
   return (
-    <div className="card">
-      <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14 }}>
-        <div style={{ width: 46, height: 46, borderRadius: "50%", background: skin.skinHex || "#ccc", border: "2px solid #fff", boxShadow: "0 0 0 1px var(--line)" }} />
-        <div>
-          <div style={{ fontWeight: 700, fontSize: 16 }}>Today's skin-state</div>
-          <div style={{ fontSize: 13, color: "var(--muted)" }}>
-            {skin.skinHex} · {skin.undertone} undertone
-            {top ? ` · strongest signal: ${LABELS[top[0]] ?? top[0]} ${Math.round(top[0] === "moisture" ? 100 - top[1] : top[1])}` : null}
-          </div>
+    <section className="card">
+      <div className="eyebrow">01 / Your skin today</div>
+      <h2>A warm, luminous starting point.</h2>
+      <div className="state-top">
+        <div className="swatch" style={{ background: skin.skinHex || "#b0896c" }} />
+        <div className="tone">
+          {(skin.skinHex || "#B0896C").toUpperCase()}
+          <small>{skin.undertone ? `${skin.undertone} undertone` : "undertone"} · medium tan</small>
+        </div>
+        <div className="signal">
+          <b>{top ? top.v.toFixed(1).replace(/\.0$/, "") : "—"}</b>
+          strongest signal · {(top && LABELS[top.k]) ?? top?.k}
         </div>
       </div>
-      <div style={{ display: "grid", gap: 8 }}>
-        {entries.map(([k, v]) => {
-          const { fill, tag } = level(v, k);
-          const shown = k === "moisture" ? Math.round(100 - v) : Math.round(v);
-          return (
-            <div key={k} className="bar-row" title={`${tag} concern`}>
-              <span className="k">{LABELS[k] ?? k.replace(/_/g, " ")}</span>
-              <div className="bar-track">
-                <div className="bar-fill" style={{ width: `${shown}%`, background: fill }} />
-              </div>
-              <span className="v">{shown}</span>
+      <div className="metrics">
+        {entries.map(({ k, v }) => (
+          <div key={k}>
+            <div className="metric-head">
+              <b>{LABELS[k] ?? k.replace(/_/g, " ")}</b>
+              <span>{v} / 100</span>
             </div>
-          );
-        })}
+            <div className="track">
+              <div className={fillClass(v)} style={{ width: `${v}%` }} />
+            </div>
+          </div>
+        ))}
       </div>
-      <div className="caption">Higher = stronger signal today, not a diagnosis. Dryness is shown inverted (100 − moisture).</div>
-    </div>
+      <p className="subtle">Signals are cosmetic preview indicators, not a medical assessment.</p>
+    </section>
   );
 }

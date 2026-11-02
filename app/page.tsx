@@ -7,13 +7,19 @@ import { HonestLabel } from "@/components/HonestLabel";
 import { BudgetMeter } from "@/components/BudgetMeter";
 
 const OCCASIONS = ["Interview", "Date Night", "Diwali Dinner", "Travel"];
-const GARMENTS = [
-  { name: "Forest top", detail: "#1F4D3A · ΔE 46.8 — won't wash you out", refused: false },
-  { name: "Nude camel", detail: "#C19A6B · ΔE 11.1 — refused, washes out", refused: true },
-];
-const BUNDLE = [
-  { name: "Sheer berry lip", detail: "transparent glow over true-red matte" },
-  { name: "Tinted moisturizer", detail: "sheer-to-medium, dewy where dry" },
+
+type SkinData = {
+  skin: { raw: Record<string, number>; skinHex?: string; undertone?: string };
+  advice: { refuses: { item: string; reason: string }[]; prefers: string[] };
+  palette?: { name: string; hex: string; deltaE_vs_skin: number; note: string }[];
+  mode?: string;
+};
+
+const PRODUCTS = [
+  { name: "Forest tailored blazer", meta: "Garment · deep forest", hex: "#1f4d3a", refused: false },
+  { name: "Camel satin blouse", meta: "Garment · visible, but not recommended", hex: "#c19a6b", refused: true, flag: "LOW CONTRAST" },
+  { name: "Muted berry lip tint", meta: "Makeup · soft satin finish", hex: "#8e2f45", refused: false },
+  { name: "Weightless skin veil", meta: "Makeup · natural finish", hex: "#e8d5c3", refused: false },
 ];
 
 function fileToDataUrl(f: File): Promise<string> {
@@ -29,8 +35,10 @@ export default function Page() {
   const [img, setImg] = useState<string | null>(null);
   const [occasion, setOccasion] = useState(OCCASIONS[0]);
   const [loading, setLoading] = useState(false);
-  const [data, setData] = useState<{ skin?: { raw: Record<string, number>; skinHex?: string; undertone?: string }; advice?: { refuses: { item: string; reason: string }[]; prefers: string[] }; palette?: { name: string; hex: string; deltaE_vs_skin: number; note: string }[]; mode?: string } | null>(null);
+  const [data, setData] = useState<SkinData | null>(null);
   const [cart, setCart] = useState<string[]>([]);
+  const [checkoutMsg, setCheckoutMsg] = useState<string | null>(null);
+
   useEffect(() => {
     try {
       setCart(JSON.parse(localStorage.getItem("skinday-cart") || "[]"));
@@ -41,9 +49,14 @@ export default function Page() {
 
   async function run() {
     setLoading(true);
+    setCheckoutMsg(null);
     try {
       // NOTE: MVP sends the same image to all endpoints. Dual-capture (face crop vs full frame) is TODO per SCOPE §6.
-      const r = await fetch("/api/skin", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ imageBase64: img, occasion }) });
+      const r = await fetch("/api/skin", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ imageBase64: img, occasion }),
+      });
       setData(await r.json());
     } finally {
       setLoading(false);
@@ -70,89 +83,179 @@ export default function Page() {
   }
 
   const isFixture = !!data?.mode?.startsWith("fixture");
+  const count = cart.length;
 
   return (
-    <main className="page">
-      <header className="brand">
+    <main className="shell">
+      <header>
         <div>
-          <h1 className="serif">SkinDay<span className="dot">.</span></h1>
-          <p className="tagline">Dress for the skin you're in today. One selfie → skin-state → makeup + outfit bundle.</p>
+          <div className="brand">
+            SkinDay<i>.</i>
+          </div>
+          <div className="tag">Dress for the skin you&apos;re in today.</div>
         </div>
         <BudgetMeter />
       </header>
 
+      <div className="eyebrow">Your daily styling ritual</div>
+      <h1>
+        Good skin day.
+        <br />
+        <em>Great outfit day.</em>
+      </h1>
+      <p className="intro">
+        Your skin has a mood. Your look should know it. Get a considered makeup and outfit edit based
+        on how your skin looks today.
+      </p>
+
       <section className="card">
-        <label className="step-label"><span className="n">1</span>Scan — one photo, this session only</label>
-        <input
-          type="file"
-          accept="image/*"
-          onChange={async (e) => {
-            const f = e.target.files?.[0];
-            if (f) setImg(await fileToDataUrl(f));
-          }}
-        />
-        {img ? <img src={img} alt="upload" className="preview-img" style={{ marginTop: 10 }} /> : null}
+        <div className="stephead">
+          <span className="num">1</span>
+          <strong>Let&apos;s see today&apos;s skin</strong>
+          <span className="hint">One selfie · this session only</span>
+        </div>
+        <div className="upload">
+          {img ? (
+            <img className="avatar" src={img} alt="Your uploaded selfie preview" />
+          ) : (
+            <div className="avatar-empty" aria-hidden>
+              ◍
+            </div>
+          )}
+          <div className="uploadcopy">
+            <strong>Your photo, your private moment.</strong>
+            <span>Front-facing, natural light works best.</span>
+          </div>
+          <label htmlFor="file">Upload selfie</label>
+          <input
+            id="file"
+            type="file"
+            accept="image/*"
+            onChange={async (e) => {
+              const f = e.target.files?.[0];
+              if (f) setImg(await fileToDataUrl(f));
+            }}
+          />
+        </div>
       </section>
 
       <section className="card">
-        <label className="step-label"><span className="n">2</span>Occasion — the look adapts</label>
-        <div className="chip-row" role="group" aria-label="Occasion">
+        <div className="stephead">
+          <span className="num">2</span>
+          <strong>Where are you headed?</strong>
+          <span className="hint">Choose one</span>
+        </div>
+        <div className="chips" role="group" aria-label="Occasion">
           {OCCASIONS.map((o) => (
-            <button key={o} onClick={() => setOccasion(o)} className="chip" aria-pressed={occasion === o}>
+            <button
+              key={o}
+              className={occasion === o ? "chip active" : "chip"}
+              aria-pressed={occasion === o}
+              onClick={() => setOccasion(o)}
+            >
               {o}
             </button>
           ))}
         </div>
       </section>
 
-      <button className="cta" onClick={run} disabled={loading}>
-        {loading ? "Reading skin… (cloth VTO takes ~20s live)" : "Get today's look"}
+      <button className="primary" onClick={run} disabled={loading}>
+        {loading ? "Reading skin…" : "Get today's look  →"}
       </button>
+      <div className="tiny">Your photo stays in this session. No account needed.</div>
 
       {data?.skin && data?.advice ? (
         <>
-          <div className="mode-line">
-            {isFixture ? <span className="mode-badge">Precomputed demo</span> : null}
-            <span>{data.mode} · {occasion}</span>
+          <div className="mode">
+            {isFixture ? <span className="badge">Precomputed demo</span> : null}
+            <span>
+              {data.mode}  ·  {occasion} edit  ·  0 units used
+            </span>
           </div>
+
           <SkinCard skin={data.skin} />
           <WhyCard advice={data.advice} palette={data.palette} />
-          <div>
-            <div className="step-label" style={{ marginBottom: 8 }}>Makeup, on you</div>
-            <LookCompare before={img} after={isFixture ? "/fixtures/makeup_golden.jpg" : null} />
-          </div>
-          {isFixture ? (
-            <div>
-              <div className="step-label" style={{ marginBottom: 8 }}>Outfit, on you</div>
-              <img src="/fixtures/cloth_golden.jpg" alt="Outfit VTO (precomputed golden run)" className="preview-img" />
-              <div className="caption">Outfit VTO — precomputed golden run · visual preview only, not a fit guarantee.</div>
-            </div>
-          ) : null}
+
           <section className="card">
-            <div className="step-label"><span className="n">3</span>Bundle checkout</div>
-            <div style={{ display: "grid", gap: 8 }}>
-              {[...GARMENTS, ...BUNDLE].map((g) => {
-                const inCart = cart.includes(g.name);
-                const refused = (g as { refused?: boolean }).refused;
-                return (
-                  <div key={g.name} className={refused ? "cart-row refused" : "cart-row"}>
-                    <span>
-                      <span className="nm">{g.name}</span>
-                      <br />
-                      <span style={{ fontSize: 12, color: "var(--muted)" }}>{g.detail}{refused ? " · skipped for today" : ""}</span>
-                    </span>
-                    <button className={inCart ? "add-btn in-cart" : "add-btn"} onClick={() => toggleCart(g.name)}>
-                      {inCart ? "✓ Added" : "Add +"}
-                    </button>
-                  </div>
-                );
-              })}
-            </div>
-            <div className="cart-line" style={{ marginTop: 10, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <span>Cart ({cart.length}): {cart.length ? cart.join(" · ") : "empty"}</span>
-              {cart.length ? <button className="link-btn" onClick={clearCart}>Clear</button> : null}
-            </div>
+            <div className="eyebrow">03 / Makeup preview</div>
+            <h2>Soft focus, not full cover.</h2>
+            <p className="subtle" style={{ marginTop: 0 }}>
+              A fresh, balanced finish that lets your skin look like skin.
+            </p>
+            <LookCompare
+              before={img}
+              after={isFixture ? "/fixtures/makeup_golden.jpg" : null}
+            />
           </section>
+
+          {isFixture ? (
+            <section className="card">
+              <div className="eyebrow">04 / Outfit preview</div>
+              <h2>The forest-green moment.</h2>
+              <p className="subtle" style={{ marginTop: 0 }}>
+                Polished, confident, and quietly memorable.
+              </p>
+              <div className="visual outfit">
+                <img src="/fixtures/cloth_golden.jpg" alt="Forest-green outfit visual preview" />
+                <span className="caption">{occasion.toUpperCase()} EDIT · VISUAL PREVIEW ONLY</span>
+              </div>
+              <p className="visual-note">Visual preview only, not a fit guarantee.</p>
+            </section>
+          ) : null}
+
+          <section className="card">
+            <div className="eyebrow">05 / Your edit, ready to shop</div>
+            <h2>Bring the whole look together.</h2>
+            <p className="subtle" style={{ marginTop: 0 }}>
+              A considered four-piece edit. Add only what feels right.
+            </p>
+            {PRODUCTS.map((p) => {
+              const on = cart.includes(p.name);
+              return (
+                <div key={p.name} className="product">
+                  <div className="prodswatch" style={{ background: p.hex }} aria-hidden />
+                  <div>
+                    <div className="prodname">
+                      {p.name} {p.refused && p.flag ? <span className="refused">{p.flag}</span> : null}
+                    </div>
+                    <div className="prodmeta">{p.meta}</div>
+                  </div>
+                  <button className={on ? "add added" : "add"} onClick={() => toggleCart(p.name)}>
+                    {on ? "✓ Added" : "＋ Add"}
+                  </button>
+                </div>
+              );
+            })}
+            <div className="cartline">
+              <b>
+                {count} item{count === 1 ? "" : "s"} in your edit
+              </b>
+              {count ? (
+                <button className="clear" onClick={clearCart}>
+                  Clear selection
+                </button>
+              ) : null}
+            </div>
+            <button
+              className="primary"
+              style={{ marginBottom: 0 }}
+              onClick={() =>
+                setCheckoutMsg(
+                  count
+                    ? `Your ${count}-piece edit is ready for checkout in this demo.`
+                    : "Add an item to your edit first.",
+                )
+              }
+            >
+              Continue with your edit  →
+            </button>
+            {checkoutMsg ? (
+              <p className="subtle" role="status">
+                {checkoutMsg}
+              </p>
+            ) : null}
+          </section>
+
           <HonestLabel />
         </>
       ) : null}

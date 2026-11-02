@@ -2,10 +2,13 @@
 import { useEffect, useState } from "react";
 
 export function BudgetMeter() {
-  const [s, setS] = useState<unknown>(null);
+  const [s, setS] = useState<{ mode?: string } | null>(null);
   useEffect(() => {
-    fetch("/api/budget").then((r) => r.json()).then(setS).catch(() => setS({ mode: "error" }));
+    fetch("/api/budget")
+      .then((r) => r.json())
+      .then(setS)
+      .catch(() => setS({ mode: "error" }));
   }, []);
-  const mode = (s as { mode?: string } | null)?.mode;
-  return <div className="pill">Units: {mode === "fixture" ? "demo mode · 0 spent" : mode ?? "…"}</div>;
+  const mode = s?.mode;
+  return <div className="meter">✦ {mode === "fixture" ? "DEMO MODE  ·  0 SPENT" : mode ? mode.toUpperCase() : "…"}</div>;
 }
