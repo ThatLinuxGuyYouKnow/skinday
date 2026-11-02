@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <rect width="64" height="64" rx="14" fill="#faf6f1"/>
+  <!-- crescent cradle -->
+  <path d="M42 8C28 8 16 19 16 32s12 24 26 24C31 52 24 43 24 32S31 12 42 8Z" fill="#2b211c"/>
+  <!-- brow -->
+  <path d="M37 17c-1.5.5-2.5 1.5-2.5 3" fill="none" stroke="#2b211c" stroke-width="2.4" stroke-linecap="round"/>
+  <!-- closed eye with lash -->
+  <path d="M29 24.5c2 1.4 4.5 1.4 6.5 0" fill="none" stroke="#2b211c" stroke-width="2.4" stroke-linecap="round"/>
+  <!-- nose -->
+  <path d="M36.5 24.5 35 27.5l3.5 3.5c1 1 .8 2.2-1 2.5" fill="none" stroke="#2b211c" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- lips + chin + jaw -->
+  <path d="M37.5 35.5c1 .8.8 1.8-.5 2.2 1.2.6 1 1.8-.8 2.3-1 2.5-3 4-6.5 4.5" fill="none" stroke="#2b211c" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- berry spark -->
+  <path d="M47 8l1.6 4.4L53 14l-4.4 1.6L47 20l-1.6-4.4L41 14l4.4-1.6Z" fill="#8e2f45"/>
+</svg>

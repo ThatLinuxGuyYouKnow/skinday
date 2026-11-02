@@ -1,7 +1,11 @@
 import type { Metadata } from "next";
 import "./globals.css";
 
-export const metadata: Metadata = { title: "SkinDay — Dress for the skin you're in today", description: "One selfie -> live skin-state -> makeup + outfit re-computed for today." };
+export const metadata: Metadata = {
+  title: "SkinDay — Dress for the skin you're in today",
+  description: "One selfie -> live skin-state -> makeup + outfit re-computed for today.",
+  icons: { icon: "/favicon.svg" },
+};
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
